@@ -11,6 +11,8 @@ Link Dataset : https://www.kaggle.com/datasets/fedesoriano/heart-failure-predict
 Nama : Dimas Ramadhan Alfinsyah
 
 NIM  : 22.11.4742
+
+# Import library
 """
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -20,17 +22,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
 
 # Set matplotlib untuk menampilkan plot di notebook
 # %matplotlib inline
 
 # Optional: Set tema seaborn (opsional)
 sns.set_theme()
+
+"""# Pengumpulan Data"""
 
 # Load dataset
 dataset_path = '/content/heart.csv'
@@ -46,6 +49,8 @@ print("\nUkuran Dataset:", data.shape)
 # Informasi data
 print("\nInformasi Dataset:")
 data.info()
+
+"""# Data Preprocessing"""
 
 # Handling missing values
 print("\nJumlah Missing Values Sebelum Penanganan:")
@@ -72,6 +77,8 @@ print(data.head(10))
 print("\nInformasi Dataset Setelah Konversi:")
 data.info()
 
+"""# Exploratory Data Analysis"""
+
 # Visualisasi distribusi fitur numerik
 numerical_cols = data.select_dtypes(include=[np.number]).columns
 print("\nFitur Numerik:", list(numerical_cols))
@@ -90,6 +97,8 @@ correlation_matrix = data.corr()
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
 plt.title('Matriks Korelasi')
 plt.show()
+
+"""# Seleksi Fitur"""
 
 # Pisahkan fitur (X) dan target (y)
 X = data.drop('HeartDisease', axis=1)
@@ -110,17 +119,19 @@ imputer = SimpleImputer(strategy='mean')
 X_train = imputer.fit_transform(X_train)
 X_test = imputer.transform(X_test)
 
-# Inisialisasi model K-Nearest Neighbors
-knn_model = KNeighborsClassifier(n_neighbors=5)
+"""# Modeling"""
+
+# Inisialisasi model Gradient Boosting Machines (GBM)
+gbm_model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
 
 # Melatih model pada data pelatihan
-knn_model.fit(X_train, y_train)
+gbm_model.fit(X_train, y_train)
 
 # Melakukan prediksi pada data uji
-y_pred = knn_model.predict(X_test)
+y_pred = gbm_model.predict(X_test)
 
 # Mengukur akurasi model
-accuracy_knn = accuracy_score(y_pred, y_test)
+accuracy_gbm = accuracy_score(y_test, y_pred)
 
 # Confusion matrix
 cmr = confusion_matrix(y_test, y_pred)
@@ -131,8 +142,6 @@ cm_labels = np.array(cm_labels).reshape(2, 2)
 
 class_report = classification_report(y_test, y_pred)
 
-print("Accuracy (KNN):", accuracy_knn)
-
 print('\nConfusion Matrix:')
 print(cmr)
 
@@ -141,33 +150,9 @@ sns.heatmap(cmr / np.sum(cmr), annot=cm_labels, fmt='', cmap='coolwarm', annot_k
 plt.title('Confusion Matrix with Percentages')
 plt.show()
 
+"""# Evaluasi Model"""
+
+print("Accuracy (GBM):", accuracy_gbm)
+
 # Menampilkan informasi klasifikasi
 print(class_report)
-
-# Normalisasi fitur numerik
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-# Hyperparameter tuning dengan GridSearchCV
-param_grid = {
-    'n_neighbors': [3, 5, 7, 9],
-    'weights': ['uniform', 'distance'],
-    'metric': ['euclidean', 'manhattan']
-}
-grid_search = GridSearchCV(KNeighborsClassifier(), param_grid, cv=5, scoring='accuracy')
-grid_search.fit(X_train_scaled, y_train)
-
-# Model terbaik setelah tuning
-best_knn_model = grid_search.best_estimator_
-print("Best Parameters:", grid_search.best_params_)
-
-# Evaluasi model setelah tuning
-y_pred_best = best_knn_model.predict(X_test_scaled)
-accuracy_best = accuracy_score(y_test, y_pred_best)
-print("Accuracy after tuning:", accuracy_best)
-
-# Confusion matrix dan classification report setelah tuning
-from sklearn.metrics import confusion_matrix, classification_report
-print(confusion_matrix(y_test, y_pred_best))
-print(classification_report(y_test, y_pred_best))
